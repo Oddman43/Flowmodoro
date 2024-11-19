@@ -331,3 +331,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# FALTA
+    # crear sqlite3 si no existe
+    # poder editar proyectos
+    # quitar pagina de inicio o poner opcion para ocultar
+    # parte de goal accomplished
+    # tidyup codigo en general
+    # hacer opcional el sonido de end break
