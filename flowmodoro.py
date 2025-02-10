@@ -81,8 +81,8 @@ def get_last_sevendays_avg() -> int:
     results: list = res.fetchall()
     con.close()
     try:
-        avg =  int(int(results[0][0]) / 7)
-    except(TypeError):
+        avg = int(int(results[0][0]) / 7)
+    except TypeError:
         avg = 0
     return avg
 
@@ -103,6 +103,10 @@ def total_mins_today() -> int:
 
 def start() -> None:
     os.system("cls" if os.name == "nt" else "clear")
+    con: sqlite3.Connection = sqlite3.connect("flow.db")
+    cur: sqlite3.Cursor = con.cursor()
+    res = cur.execute("SELECT break_level FROM break_level WHERE id = 1")
+    result = res.fetchall()
     flowmodoro_description: str = (
         # Que es flowmodoro
         f"FlowModoro:\nA flexible time management tool inspired by Pomodoro technique. "
@@ -116,22 +120,22 @@ def start() -> None:
         f"    - 1 : offers a break ratio of 05-minute break for every 60 minutes of work\n"
         f"    - 2 : offers a break ratio of 10-minute break for every 60 minutes of work.\n"
         f"    - 3 : offers a break ratio of 15-minute break for every 60 minutes of work.\n"
-        f"\n To start working press enter"
+        f"Your selected break level is: {result[0][0]} \nTo start working with this break level press enter\n\n"
+        f"To change it enter the int corresponding with you selected Break Level\n"
     )
-    input(flowmodoro_description)
-
-
-def working_project() -> str:
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    res = cur.execute("SELECT project FROM projects WHERE status = 0")
-    results: list = res.fetchall()
+    inp = input(flowmodoro_description)
+    try:
+        if int(inp) in [1, 2, 3]:
+            cur.execute(
+                f"UPDATE break_level SET break_level = ? WHERE id = ?", (int(inp), 1)
+            )
+            con.commit()
+            print(inp)
+        else:
+            start()
+    except ValueError:
+        pass
     con.close()
-    print("Daily projects:")
-    project: tuple
-    for project in results:
-        print(f"· {project[0].upper()}")
-    return input("On what project are you wokring on this cycle? ").lower()
 
 
 def progress_bar(
@@ -269,15 +273,65 @@ def play_sound(file_path: str) -> None:
     pygame.mixer.music.play()
 
 
+def select_wip() -> str:
+    os.system("cls" if os.name == "nt" else "clear")
+    con: sqlite3.Connection = sqlite3.connect("flow.db")
+    cur: sqlite3.Cursor = con.cursor()
+    res = cur.execute("SELECT project, status FROM projects")
+    results: list = res.fetchall()
+    print("Daily projects:")
+    for tpl in results:
+        if tpl[1] == 0:
+            print(f"· {tpl[0].upper()}")
+    working = input(
+        "On what project are you wokring on this cycle?\n"
+        "If you wish to create a new project add !\n"
+        "If you want to see inactive projects input 0\n"
+    ).lower()
+    wip = check_wip(working, con, cur, results)
+    con.close()
+    return wip
+
+
+def check_wip(working: str, con, cur, results):
+    check = {i[0]: i[1] for i in results}
+    if working in check.keys():
+        # si project existe cambiar status a 0 (activo)
+        if check[working] == 1:
+            cur.execute(
+                "UPDATE projects SET status = ? WHERE project = ?", (0, working)
+            )
+            con.commit()
+        return working
+    else:
+        # si empieza con ! crear proyecto
+        if working[0] == "!":
+            cur.execute(
+                "INSERT INTO projects (project) VALUES (?)", (working.replace("!", ""),)
+            )
+            con.commit()
+            return working
+        # si es 0 dar lista de inactive
+        elif working == "0":
+            print("Inactive projects")
+            for k, v in check.items():
+                if v == 1:
+                    print(f"· {k.upper()}")
+            input("Press enter to continue\n")
+        # no existe o esta mal escrito
+        else:
+            input("The project dosent exist, please press enter to selecta again\n")
+        return select_wip()
+
+
 def main():
     # con: sqlite3.Connection = sqlite3.connect("flow.db")
     # cur: sqlite3.Cursor = con.cursor()
     workometer: int = get_last_sevendays_avg()
     start()
     while True:
-        current_project = working_project()
         work_cycle = work_loop(
-            get_today_cicles(), total_mins_today(), workometer, current_project
+            get_today_cicles(), total_mins_today(), workometer, select_wip()
         )
         save_cycle(work_cycle)
         break_time(work_cycle[3], get_break_level())
