@@ -1,5 +1,4 @@
 import sqlite3
-import pendulum
 from datetime import datetime, timedelta
 import time
 import os
@@ -21,7 +20,7 @@ def get_break_level() -> float:
 
 
 def get_today_cicles() -> list:
-    today: str = str(pendulum.now()).split()[0]
+    today: str = str(datetime.now()).split()[0]
     con: sqlite3.Connection = sqlite3.connect("flow.db")
     cur: sqlite3.Cursor = con.cursor()
     res = cur.execute(
@@ -71,8 +70,8 @@ def get_subs_dict(reverse=False) -> dict:
 
 
 def get_last_sevendays_avg() -> int:
-    yesterday: str = str(pendulum.yesterday()).split()[0]
-    eight_days: str = str(pendulum.now().subtract(days=8)).split()[0]
+    yesterday: str = str(datetime.now() - timedelta(days=1)).split()[0]
+    eight_days: str = str(datetime.now() - timedelta(days=8)).split()[0]
     con: sqlite3.Connection = sqlite3.connect("flow.db")
     cur: sqlite3.Cursor = con.cursor()
     res = cur.execute(
@@ -89,7 +88,7 @@ def get_last_sevendays_avg() -> int:
 
 
 def total_mins_today() -> int:
-    today: str = str(pendulum.now()).split()[0]
+    today: str = str(datetime.now()).split()[0]
     con: sqlite3.Connection = sqlite3.connect("flow.db")
     cur: sqlite3.Cursor = con.cursor()
     res = cur.execute(
@@ -162,7 +161,7 @@ def progress_bar(
 def work_loop(
     cycles: list, total_worked: int, workometer: int, working_on: str
 ) -> tuple:
-    time_started: datetime = pendulum.now()
+    time_started: datetime = datetime.now()
     timer: int = 1
     while True:
         try:
@@ -198,7 +197,7 @@ def work_loop(
                 timer += 1
         except KeyboardInterrupt:
             os.system("cls" if os.name == "nt" else "clear")
-            time_ended: datetime = pendulum.now()
+            time_ended: datetime = datetime.now()
             break
     while True:
         try:
