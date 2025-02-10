@@ -6,7 +6,6 @@ import os
 import pygame
 
 
-# Lee la db para determianr que valor esta en la tabla break level y devuelve el float associado
 def get_break_level() -> float:
     con: sqlite3.Connection = sqlite3.connect("flow.db")
     cur: sqlite3.Cursor = con.cursor()
@@ -21,7 +20,6 @@ def get_break_level() -> float:
         return 15 / 60
 
 
-# Lee la db tabla daily_log para cuando started == hoy y formatea el return de la db de manera bonita
 def get_today_cicles() -> list:
     today: str = str(pendulum.now()).split()[0]
     con: sqlite3.Connection = sqlite3.connect("flow.db")
@@ -49,8 +47,6 @@ def get_today_cicles() -> list:
     return cycles_lst
 
 
-# Lee la db de projects y crea un diccionario con el id y el proyecto
-# Los valores de k:v pueden ser invertidos con el agrumento reverse=True
 def get_subs_dict(reverse=False) -> dict:
     con: sqlite3.Connection = sqlite3.connect("flow.db")
     cur: sqlite3.Cursor = con.cursor()
@@ -58,15 +54,22 @@ def get_subs_dict(reverse=False) -> dict:
     results: list = res.fetchall()
     con.close()
     prj_dict: dict = {}
-    for project in results:
-        if reverse:
-            prj_dict[project[1]] = project[0]
-        else:
-            prj_dict[project[0]] = project[1]
-    return prj_dict
+    if reverse:
+        for project in results:
+            if project[2] == 1:
+                pass
+            else:
+                prj_dict[project[1]] = project[0]
+        return prj_dict
+    else:
+        for project in results:
+            if project[2] == 1:
+                pass
+            else:
+                prj_dict[project[0]] = project[1]
+        return prj_dict
 
-# Hace query a la db y suma los valores de mins worked dentro del rango indicado
-# Returnea la suma de los minutos / 7 en forma de int
+
 def get_last_sevendays_avg() -> int:
     yesterday: str = str(pendulum.yesterday()).split()[0]
     eight_days: str = str(pendulum.now().subtract(days=8)).split()[0]
@@ -78,11 +81,13 @@ def get_last_sevendays_avg() -> int:
     )
     results: list = res.fetchall()
     con.close()
-    return int(int(results[0][0]) / 7)
+    try:
+        avg =  int(int(results[0][0]) / 7)
+    except(TypeError):
+        avg = 0
+    return avg
 
 
-# Hace un query en la db tabla daily_log para started hoy de la suma de los mins trabajados
-# Si de querry el resultado es None return 0, sino return el int de la suma mins trabajados
 def total_mins_today() -> int:
     today: str = str(pendulum.now()).split()[0]
     con: sqlite3.Connection = sqlite3.connect("flow.db")
@@ -97,18 +102,7 @@ def total_mins_today() -> int:
         return int(result[0][0])
 
 
-# Cambia el valor de la tabla break_level que se usa como default para break_level
-def change_break_level_default(new_bl: str) -> None:
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    cur.execute("UPDATE break_level SET break_level = ? WHERE id = 1", (int(new_bl),))
-    con.commit()
-    con.close()
-
-
-# Explicaicon de flowmodoro y capacidad de cambiar el bl tanto el dafault como para 1 sesion
-# returnea un float que puede ser 0.0  o el bl para la sesion
-def start() -> float:
+def start() -> None:
     os.system("cls" if os.name == "nt" else "clear")
     flowmodoro_description: str = (
         # Que es flowmodoro
@@ -124,65 +118,21 @@ def start() -> float:
         f"    - 2 : offers a break ratio of 10-minute break for every 60 minutes of work.\n"
         f"    - 3 : offers a break ratio of 15-minute break for every 60 minutes of work.\n"
         f"\n To start working press enter"
-        f"\n To change the default break level enter the number corresponding with the break level"
-        f"\n To change the break level for this sesion enter '-' followed by the corresponding break level\n"
     )
-    while True:
-        break_level: str = input(flowmodoro_description)
-        if break_level.isdigit():
-            if 1 <= int(break_level) <= 3:
-                change_break_level_default(break_level)
-                return 0.0
-            else:
-                os.system("cls" if os.name == "nt" else "clear")
-                print("Incorrect break level selected")
-        elif break_level in ["-1", "-2", "-3"]:
-            if break_level == "-1":
-                return 5/60
-            elif break_level == "-2":
-                return 10/60
-            elif break_level == "-3":
-                return 15/60
-            else:
-                print("Error")
-        else:
-            return 0.0
+    input(flowmodoro_description)
 
 
-# Query a db para tener una lista de los proyectos activos y input sobre que proyecto se va a trabajar
-# Si el proyecto no existe crear y preguntar si se quiere añadir un goal
 def working_project() -> str:
     con: sqlite3.Connection = sqlite3.connect("flow.db")
     cur: sqlite3.Cursor = con.cursor()
-    res_all = cur.execute("SELECT project, status FROM projects")
-    results: list = res_all.fetchall()
+    res = cur.execute("SELECT project FROM projects WHERE status = 0")
+    results: list = res.fetchall()
+    con.close()
     print("Daily projects:")
-    prj_list: list = []
-    prj_dict: dict = get_subs_dict(reverse=True)
     project: tuple
     for project in results:
-        if project[1] == 0:
-            print(f"· {project[0].upper()}")
-        prj_list.append(project[0])
-    working_on: str =  input("On what project are you wokring on this cycle? ").lower()
-    if working_on not in prj_dict:
-        cur.execute("INSERT INTO projects (project) VALUES (?)", (working_on,))
-        con.commit()
-        try:
-            goal_mins: int = int(input("If you want to create a goal for this project write the number of minutes if you dont want just press enter:\n"))
-            prj_id: int = prj_dict[working_on]
-            cur.execute("INSERT INTO projects_goal (project_id, goal_mins) VALUES(?,?)", (prj_id, goal_mins))
-            con.commit()
-        except:
-            pass
-    elif working_on in prj_dict:
-        for i in results:
-            if i[0] == working_on and i[1] == 1:
-                cur.execute("UPDATE projects SET status = 0 WHERE id = ?", (prj_dict[working_on],))
-                cur.execute("UPDATE projects_goal SET status = 0 WHERE id = ?", (prj_dict[working_on],))
-                con.commit()
-    con.close()
-    return working_on
+        print(f"· {project[0].upper()}")
+    return input("On what project are you wokring on this cycle? ").lower()
 
 
 def progress_bar(
@@ -226,11 +176,11 @@ def work_loop(
                 total_hours, total_minutes = divmod(total_m, 60)
                 print(f"Worked today -> {total_hours:02d}:{total_minutes:02d}")
                 cycle_m: int
-                cycle_m, cycle_seconds = divmod(timer, 60)
+                cycle_m, _ = divmod(timer, 60)
                 cycle_hours: int
                 cycle_minutes: int
                 cycle_hours, cycle_minutes = divmod(cycle_m, 60)
-                print(f"Current cycle -> {cycle_hours:02d}:{cycle_minutes:02d}:{cycle_seconds:02d}")
+                print(f"Current cycle -> {cycle_hours:02d}:{cycle_minutes:02d}")
                 print(f"Working on -> {working_on.upper()}\n")
                 workometer_hours: int
                 workometer_minutes: int
@@ -252,7 +202,7 @@ def work_loop(
             break
     while True:
         try:
-            accomplished: str = input("What did you accomplish during this cycle?\n")
+            accomplished: str = input("What did you accomplish during this cycle? ")
             break
         except (KeyboardInterrupt, EOFError):
             continue
@@ -266,7 +216,6 @@ def work_loop(
     return (projects_id[working_on], t_s_clean, t_e_clean, mins_worked, accomplished)
 
 
-# Guardar en db el workcycle tuple
 def save_cycle(work_tuple: tuple) -> None:
     con: sqlite3.Connection = sqlite3.connect("flow.db")
     cur: sqlite3.Cursor = con.cursor()
@@ -276,6 +225,18 @@ def save_cycle(work_tuple: tuple) -> None:
     )
     con.commit()
     con.close()
+
+
+def working_project() -> str:
+    con: sqlite3.Connection = sqlite3.connect("flow.db")
+    cur: sqlite3.Cursor = con.cursor()
+    res = cur.execute("SELECT project FROM projects WHERE status = 0")
+    results = res.fetchall()
+    con.close()
+    print(f"\nDaily projects:")
+    for project in results:
+        print(f"· {project[0].upper()}")
+    return input("On what project are you wokring on this cycle? ").lower()
 
 
 def break_time(mins_worked: int, break_level: float) -> None:
@@ -295,12 +256,10 @@ def break_time(mins_worked: int, break_level: float) -> None:
             seconds_rest -= 1
         break
     try:
-        os.system("cls" if os.name == "nt" else "clear")
         file: str = "C:\\Users\\alber\\Documents\\Flowmodoro\\alarm.wav"
         play_sound(file)
         print("Break time is over")
-        input("To continue working press enter:\nNow it is safe to close the program")
-        pygame.mixer_music.stop()
+        input("To continue working press enter: ")
     except (KeyboardInterrupt, EOFError):
         pass
 
@@ -315,27 +274,15 @@ def main():
     # con: sqlite3.Connection = sqlite3.connect("flow.db")
     # cur: sqlite3.Cursor = con.cursor()
     workometer: int = get_last_sevendays_avg()
-    total_minutes: int = total_mins_today()
-    break_level_select: float = start()
-    if break_level_select == 0.0:
-        break_level: float = get_break_level()
-    else:
-        break_level = break_level_select
+    start()
     while True:
-        current_project: str = working_project()
-        work_cycle: tuple = work_loop(get_today_cicles(), total_minutes, workometer, current_project)
-        # save_cycle(work_cycle)
-        break_time(work_cycle[3], break_level)
-        total_minutes += work_cycle[3]
+        current_project = working_project()
+        work_cycle = work_loop(
+            get_today_cicles(), total_mins_today(), workometer, current_project
+        )
+        save_cycle(work_cycle)
+        break_time(work_cycle[3], get_break_level())
 
 
 if __name__ == "__main__":
     main()
-
-# FALTA
-    # crear sqlite3 si no existe
-    # poder editar proyectos
-    # quitar pagina de inicio o poner opcion para ocultar
-    # parte de goal accomplished
-    # tidyup codigo en general
-    # hacer opcional el sonido de end break
