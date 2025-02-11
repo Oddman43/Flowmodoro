@@ -169,11 +169,9 @@ def work_loop(
     time_worked: timedelta = time_ended - time_started
     mins_worked: int = int(time_worked.total_seconds() / 60)
     projects_id: dict = get_subs_dict(reverse=True)
-    t_started = time_started.format("YYYY-MM-DD HH:mm:ssZZ")
-    t_ended = time_ended.format("YYYY-MM-DD HH:mm:ssZZ")
-    t_s_clean = t_started[:22] + ":" + t_started[22:]
-    t_e_clean = t_ended[:22] + ":" + t_ended[22:]
-    return (projects_id[working_on], t_s_clean, t_e_clean, mins_worked, accomplished)
+    t_started = str(time_started).split(".")[0]
+    t_ended = str(time_ended).split(".")[0]
+    return (projects_id[working_on], t_started, t_ended, mins_worked, accomplished)
 
 
 def save_cycle(work_tuple: tuple) -> None:
