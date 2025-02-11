@@ -7,7 +7,7 @@ import pygame
 
 def get_break_level() -> float:
     query: str = "SELECT break_level FROM break_level"
-    break_level: int = int(sql_query(query,False)[0])
+    break_level: int = int(sql_query(query, False)[0])
     if break_level == 1:
         return 5 / 60
     elif break_level == 2:
@@ -18,7 +18,9 @@ def get_break_level() -> float:
 
 def get_today_cicles() -> str:
     today: str = str(datetime.now()).split()[0]
-    query: str = f"SELECT project_id, started, ended, mins_worked, accomplished FROM daily_log WHERE DATE(started) = {today}"
+    query: str = (
+        f"SELECT project_id, started, ended, mins_worked, accomplished FROM daily_log WHERE DATE(started) = {today}"
+    )
     results: list = sql_query(query)
     i: int = 1
     cycles_str: str = ""
@@ -53,7 +55,9 @@ def get_subs_dict(reverse=False) -> dict:
 def get_last_sevendays_avg() -> int:
     yesterday: str = str(datetime.now() - timedelta(days=1)).split()[0]
     eight_days: str = str(datetime.now() - timedelta(days=8)).split()[0]
-    query: str = f"SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) >= {eight_days} AND DATE(started) <= {yesterday}"
+    query: str = (
+        f"SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) >= {eight_days} AND DATE(started) <= {yesterday}"
+    )
     results: list = sql_query(query)
     try:
         avg = int(int(results[0][0]) / 7)
@@ -92,7 +96,9 @@ def start() -> None:
     inp = input(flowmodoro_description)
     try:
         if int(inp) in [1, 2, 3]:
-            sql_insert_update(f"UPDATE break_level SET break_level = {int(inp)} WHERE id = 1")
+            sql_insert_update(
+                f"UPDATE break_level SET break_level = {int(inp)} WHERE id = 1"
+            )
         else:
             start()
     except ValueError:
@@ -232,12 +238,16 @@ def check_wip(working: str, results):
     if working in check.keys():
         # si project existe cambiar status a 0 (activo)
         if check[working] == 1:
-            sql_insert_update(f"UPDATE projects SET status = 0 WHERE project = {working}")
+            sql_insert_update(
+                f"UPDATE projects SET status = 0 WHERE project = {working}"
+            )
         return working
     else:
         # si empieza con ! crear proyecto
         if working[0] == "!":
-            sql_insert_update(f"INSERT INTO projects (project) VALUES ({working.replace("!", "")})")
+            sql_insert_update(
+                f"INSERT INTO projects (project) VALUES ({working.replace("!", "")})"
+            )
             return working
         # si es 0 dar lista de inactive
         elif working == "0":
@@ -252,7 +262,7 @@ def check_wip(working: str, results):
         return select_wip()
 
 
-def sql_query(query: str, fetch_all= True) -> list:
+def sql_query(query: str, fetch_all=True) -> list:
     con: sqlite3.Connection = sqlite3.connect("flow.db")
     cur: sqlite3.Cursor = con.cursor()
     res = cur.execute(query)
@@ -270,6 +280,24 @@ def sql_insert_update(query: str) -> None:
     cur.execute(query)
     con.commit()
     con.close
+
+
+def project_goals() -> dict:
+    today: str = str(datetime.now()).split()[0]
+    query: str = (
+        f"SELECT project_id, mins_worked FROM daily_log WHERE DATE(started) = '{today}'"
+    )
+    results: list = sql_query(query)
+    coding: int = 240
+    bir: int = 60
+    for i in results:
+        # coding
+        if i[0] in [1, 3, 5, 7, 8]:
+            coding -= i[1]
+        # bir
+        elif i[0] == 2:
+            bir -= i[1]
+    return {"coding": coding, "bir": bir}
 
 
 def main():
