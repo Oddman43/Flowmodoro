@@ -90,19 +90,13 @@ def start() -> None:
         f"To change it enter the int corresponding with you selected Break Level\n"
     )
     inp = input(flowmodoro_description)
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
     try:
         if int(inp) in [1, 2, 3]:
-            cur.execute(
-                f"UPDATE break_level SET break_level = ? WHERE id = ?", (int(inp), 1)
-            )
-            con.commit()
+            sql_insert_update(f"UPDATE break_level SET break_level = {int(inp)} WHERE id = 1")
         else:
             start()
     except ValueError:
         pass
-    con.close()
 
 
 def progress_bar(
@@ -235,23 +229,15 @@ def select_wip() -> str:
 
 def check_wip(working: str, results):
     check = {i[0]: i[1] for i in results}
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
     if working in check.keys():
         # si project existe cambiar status a 0 (activo)
         if check[working] == 1:
-            cur.execute(
-                "UPDATE projects SET status = ? WHERE project = ?", (0, working)
-            )
-            con.commit()
+            sql_insert_update(f"UPDATE projects SET status = 0 WHERE project = {working}")
         return working
     else:
         # si empieza con ! crear proyecto
         if working[0] == "!":
-            cur.execute(
-                "INSERT INTO projects (project) VALUES (?)", (working.replace("!", ""),)
-            )
-            con.commit()
+            sql_insert_update(f"INSERT INTO projects (project) VALUES ({working.replace("!", "")})")
             return working
         # si es 0 dar lista de inactive
         elif working == "0":
@@ -276,6 +262,14 @@ def sql_query(query: str, fetch_all= True) -> list:
         results = res.fetchone()
     con.close()
     return results
+
+
+def sql_insert_update(query: str) -> None:
+    con: sqlite3.Connection = sqlite3.connect("flow.db")
+    cur: sqlite3.Cursor = con.cursor()
+    cur.execute(query)
+    con.commit()
+    con.close
 
 
 def main():
