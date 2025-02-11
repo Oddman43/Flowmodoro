@@ -95,10 +95,8 @@ def total_mins_today() -> int:
         "SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) = ?", (today,)
     )
     result: list = res.fetchall()
-    if result[0][0] == None:
-        return 0
-    else:
-        return int(result[0][0])
+    con.close()
+    return 0 if result[0][0] == None else int(result[0][0])
 
 
 def start() -> None:
@@ -130,7 +128,6 @@ def start() -> None:
                 f"UPDATE break_level SET break_level = ? WHERE id = ?", (int(inp), 1)
             )
             con.commit()
-            print(inp)
         else:
             start()
     except ValueError:
@@ -172,21 +169,13 @@ def work_loop(
             while timer:
                 os.system("cls" if os.name == "nt" else "clear")
                 total_secs: int = timer + (total_worked * 60)
-                total_m: int
                 total_m, _ = divmod(total_secs, 60)
-                total_hours: int
-                total_minutes: int
                 total_hours, total_minutes = divmod(total_m, 60)
                 print(f"Worked today -> {total_hours:02d}:{total_minutes:02d}")
-                cycle_m: int
                 cycle_m, _ = divmod(timer, 60)
-                cycle_hours: int
-                cycle_minutes: int
                 cycle_hours, cycle_minutes = divmod(cycle_m, 60)
                 print(f"Current cycle -> {cycle_hours:02d}:{cycle_minutes:02d}")
                 print(f"Working on -> {working_on.upper()}\n")
-                workometer_hours: int
-                workometer_minutes: int
                 workometer_hours, workometer_minutes = divmod(workometer, 60)
                 bar: str = progress_bar(total_m, workometer)
                 print(
@@ -194,7 +183,6 @@ def work_loop(
                 )
                 print(f"Press Cntrl + C to end working\n")
                 print("Cycles today:\n")
-                i: str
                 for i in cycles:
                     print(f"{i}")
                 time.sleep(1)
@@ -210,7 +198,7 @@ def work_loop(
         except (KeyboardInterrupt, EOFError):
             continue
     time_worked: timedelta = time_ended - time_started
-    mins_worked: int = time_worked.in_minutes()
+    mins_worked: int = int(time_worked.total_seconds() / 60)
     projects_id: dict = get_subs_dict(reverse=True)
     t_started = time_started.format("YYYY-MM-DD HH:mm:ssZZ")
     t_ended = time_ended.format("YYYY-MM-DD HH:mm:ssZZ")
@@ -230,24 +218,12 @@ def save_cycle(work_tuple: tuple) -> None:
     con.close()
 
 
-def working_project() -> str:
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    res = cur.execute("SELECT project FROM projects WHERE status = 0")
-    results = res.fetchall()
-    con.close()
-    print(f"\nDaily projects:")
-    for project in results:
-        print(f"· {project[0].upper()}")
-    return input("On what project are you wokring on this cycle? ").lower()
-
-
 def break_time(mins_worked: int, break_level: float) -> None:
     os.system("cls" if os.name == "nt" else "clear")
-    while True:
-        input("Press enter to start the break ")
-        seconds_rest = int((mins_worked * 60) * break_level)
-        prog_bar_secs = seconds_rest
+    seconds_rest = int((mins_worked * 60) * break_level)
+    prog_bar_secs = seconds_rest
+    input("Press enter to start the break ")
+    try:
         while seconds_rest:
             os.system("cls" if os.name == "nt" else "clear")
             bar = progress_bar(seconds_rest, prog_bar_secs, reverse=True)
@@ -257,20 +233,18 @@ def break_time(mins_worked: int, break_level: float) -> None:
             print(f"Break time: \n" f"{mins:02d}m:{secs:02d}s" f"{bar}")
             time.sleep(1)
             seconds_rest -= 1
-        break
+    except(KeyboardInterrupt, EOFError):
+        pass
     try:
-        file: str = "C:\\Users\\alber\\Documents\\Flowmodoro\\alarm.wav"
-        play_sound(file)
+        file_path: str = "C:\\Users\\alber\\Documents\\Flowmodoro\\alarm.wav"
         print("Break time is over")
+        pygame.mixer.init()
+        pygame.mixer.music.load(file_path)
+        pygame.mixer.music.play()
         input("To continue working press enter: ")
     except (KeyboardInterrupt, EOFError):
         pass
-
-
-def play_sound(file_path: str) -> None:
-    pygame.mixer.init()
-    pygame.mixer.music.load(file_path)
-    pygame.mixer.music.play()
+    pygame.mixer.music.stop()
 
 
 def select_wip() -> str:
