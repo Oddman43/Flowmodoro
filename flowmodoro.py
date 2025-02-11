@@ -6,11 +6,8 @@ import pygame
 
 
 def get_break_level() -> float:
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    bl = cur.execute("SELECT break_level FROM break_level")
-    break_level: int = int(bl.fetchone()[0])
-    con.close()
+    query: str = "SELECT break_level FROM break_level"
+    break_level: int = int(sql_query(query,False)[0])
     if break_level == 1:
         return 5 / 60
     elif break_level == 2:
@@ -19,67 +16,45 @@ def get_break_level() -> float:
         return 15 / 60
 
 
-def get_today_cicles() -> list:
+def get_today_cicles() -> str:
     today: str = str(datetime.now()).split()[0]
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    res = cur.execute(
-        "SELECT project_id, started, ended, mins_worked, accomplished FROM daily_log WHERE DATE(started) = ?",
-        (today,),
-    )
-    results: list = res.fetchall()
-    con.close()
+    query: str = f"SELECT project_id, started, ended, mins_worked, accomplished FROM daily_log WHERE DATE(started) = {today}"
+    results: list = sql_query(query)
     i: int = 1
-    cycles_lst: list = []
+    cycles_str: str = ""
     projects_dict: dict = get_subs_dict()
     for cicle in results:
         started: list = cicle[1].split()
         started_time: str = f"{started[1].split(':')[0]}:{started[1].split(':')[1]}"
         ended: list = cicle[2].split()
         ended_time: str = f"{ended[1].split(':')[0]}:{ended[1].split(':')[1]}"
-        hours: int
-        minutes: int
         hours, minutes = divmod(int(cicle[3]), 60)
-        cicle_formated = f"Cycle {i} -> {started[0]} {started_time} | {ended[0]} {ended_time} | Working {hours:02d}:{minutes:02d} | {projects_dict[cicle[0]].capitalize()} | {cicle[4]}"
+        cicle_formated = f"Cycle {i} -> {started[0]} {started_time} | {ended[0]} {ended_time} | Working {hours:02d}:{minutes:02d} | {projects_dict[cicle[0]].capitalize()} | {cicle[4]}\n"
         i += 1
-        cycles_lst.append(cicle_formated)
-    return cycles_lst
+        cycles_str += cicle_formated
+    return cycles_str
 
 
 def get_subs_dict(reverse=False) -> dict:
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    res = cur.execute("SELECT * FROM projects")
-    results: list = res.fetchall()
-    con.close()
+    query: str = "SELECT * FROM projects"
+    results: str = sql_query(query)
     prj_dict: dict = {}
-    if reverse:
-        for project in results:
-            if project[2] == 1:
-                pass
-            else:
+    for project in results:
+        if project[2] == 1:
+            pass
+        else:
+            if reverse:
                 prj_dict[project[1]] = project[0]
-        return prj_dict
-    else:
-        for project in results:
-            if project[2] == 1:
-                pass
             else:
                 prj_dict[project[0]] = project[1]
-        return prj_dict
+    return prj_dict
 
 
 def get_last_sevendays_avg() -> int:
     yesterday: str = str(datetime.now() - timedelta(days=1)).split()[0]
     eight_days: str = str(datetime.now() - timedelta(days=8)).split()[0]
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    res = cur.execute(
-        "SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) >= ? AND DATE(started) <= ?",
-        (eight_days, yesterday),
-    )
-    results: list = res.fetchall()
-    con.close()
+    query: str = f"SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) >= {eight_days} AND DATE(started) <= {yesterday}"
+    results: list = sql_query(query)
     try:
         avg = int(int(results[0][0]) / 7)
     except TypeError:
@@ -89,22 +64,15 @@ def get_last_sevendays_avg() -> int:
 
 def total_mins_today() -> int:
     today: str = str(datetime.now()).split()[0]
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    res = cur.execute(
-        "SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) = ?", (today,)
-    )
-    result: list = res.fetchall()
-    con.close()
+    query: str = f"SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) = {today}"
+    result: list = sql_query(query)
     return 0 if result[0][0] == None else int(result[0][0])
 
 
 def start() -> None:
     os.system("cls" if os.name == "nt" else "clear")
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    res = cur.execute("SELECT break_level FROM break_level WHERE id = 1")
-    result = res.fetchall()
+    query: str = "SELECT break_level FROM break_level WHERE id = 1"
+    result = sql_query(query)
     flowmodoro_description: str = (
         # Que es flowmodoro
         f"FlowModoro:\nA flexible time management tool inspired by Pomodoro technique. "
@@ -122,6 +90,8 @@ def start() -> None:
         f"To change it enter the int corresponding with you selected Break Level\n"
     )
     inp = input(flowmodoro_description)
+    con: sqlite3.Connection = sqlite3.connect("flow.db")
+    cur: sqlite3.Cursor = con.cursor()
     try:
         if int(inp) in [1, 2, 3]:
             cur.execute(
@@ -160,7 +130,7 @@ def progress_bar(
 
 
 def work_loop(
-    cycles: list, total_worked: int, workometer: int, working_on: str
+    cycles: str, total_worked: int, workometer: int, working_on: str
 ) -> tuple:
     time_started: datetime = datetime.now()
     timer: int = 1
@@ -183,8 +153,7 @@ def work_loop(
                 )
                 print(f"Press Cntrl + C to end working\n")
                 print("Cycles today:\n")
-                for i in cycles:
-                    print(f"{i}")
+                print(cycles)
                 time.sleep(1)
                 timer += 1
         except KeyboardInterrupt:
@@ -233,7 +202,7 @@ def break_time(mins_worked: int, break_level: float) -> None:
             print(f"Break time: \n" f"{mins:02d}m:{secs:02d}s" f"{bar}")
             time.sleep(1)
             seconds_rest -= 1
-    except(KeyboardInterrupt, EOFError):
+    except (KeyboardInterrupt, EOFError):
         pass
     try:
         file_path: str = "C:\\Users\\alber\\Documents\\Flowmodoro\\alarm.wav"
@@ -249,10 +218,8 @@ def break_time(mins_worked: int, break_level: float) -> None:
 
 def select_wip() -> str:
     os.system("cls" if os.name == "nt" else "clear")
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    res = cur.execute("SELECT project, status FROM projects")
-    results: list = res.fetchall()
+    query: str = "SELECT project, status FROM projects"
+    results: list = sql_query(query)
     print("Daily projects:")
     for tpl in results:
         if tpl[1] == 0:
@@ -262,13 +229,14 @@ def select_wip() -> str:
         "If you wish to create a new project add !\n"
         "If you want to see inactive projects input 0\n"
     ).lower()
-    wip = check_wip(working, con, cur, results)
-    con.close()
+    wip = check_wip(working, results)
     return wip
 
 
-def check_wip(working: str, con, cur, results):
+def check_wip(working: str, results):
     check = {i[0]: i[1] for i in results}
+    con: sqlite3.Connection = sqlite3.connect("flow.db")
+    cur: sqlite3.Cursor = con.cursor()
     if working in check.keys():
         # si project existe cambiar status a 0 (activo)
         if check[working] == 1:
@@ -298,9 +266,19 @@ def check_wip(working: str, con, cur, results):
         return select_wip()
 
 
+def sql_query(query: str, fetch_all= True) -> list:
+    con: sqlite3.Connection = sqlite3.connect("flow.db")
+    cur: sqlite3.Cursor = con.cursor()
+    res = cur.execute(query)
+    if fetch_all:
+        results = res.fetchall()
+    else:
+        results = res.fetchone()
+    con.close()
+    return results
+
+
 def main():
-    # con: sqlite3.Connection = sqlite3.connect("flow.db")
-    # cur: sqlite3.Cursor = con.cursor()
     workometer: int = get_last_sevendays_avg()
     start()
     while True:
