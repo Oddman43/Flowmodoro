@@ -19,7 +19,7 @@ def get_break_level() -> float:
 def get_today_cicles() -> str:
     today: str = str(datetime.now()).split()[0]
     query: str = (
-        f"SELECT project_id, started, ended, mins_worked, accomplished FROM daily_log WHERE DATE(started) = {today}"
+        f"SELECT project_id, started, ended, mins_worked, accomplished FROM daily_log WHERE DATE(started) = '{today}'"
     )
     results: list = sql_query(query)
     i: int = 1
@@ -56,7 +56,7 @@ def get_last_sevendays_avg() -> int:
     yesterday: str = str(datetime.now() - timedelta(days=1)).split()[0]
     eight_days: str = str(datetime.now() - timedelta(days=8)).split()[0]
     query: str = (
-        f"SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) >= {eight_days} AND DATE(started) <= {yesterday}"
+        f"SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) >= '{eight_days}' AND DATE(started) <= '{yesterday}'"
     )
     results: list = sql_query(query)
     try:
@@ -68,7 +68,7 @@ def get_last_sevendays_avg() -> int:
 
 def total_mins_today() -> int:
     today: str = str(datetime.now()).split()[0]
-    query: str = f"SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) = {today}"
+    query: str = f"SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) = '{today}'"
     result: list = sql_query(query)
     return 0 if result[0][0] == None else int(result[0][0])
 
@@ -205,7 +205,7 @@ def break_time(mins_worked: int, break_level: float) -> None:
     except (KeyboardInterrupt, EOFError):
         pass
     try:
-        file_path: str = "C:\\Users\\alber\\Documents\\Flowmodoro\\alarm.wav"
+        file_path: str = r"C:\Users\alber\Documents\Flowmodoro funct\alarm.wav"
         print("Break time is over")
         pygame.mixer.init()
         pygame.mixer.music.load(file_path)
