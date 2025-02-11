@@ -282,24 +282,6 @@ def sql_insert_update(query: str) -> None:
     con.close
 
 
-def project_goals() -> dict:
-    today: str = str(datetime.now()).split()[0]
-    query: str = (
-        f"SELECT project_id, mins_worked FROM daily_log WHERE DATE(started) = '{today}'"
-    )
-    results: list = sql_query(query)
-    coding: int = 240
-    bir: int = 60
-    for i in results:
-        # coding
-        if i[0] in [1, 3, 5, 7, 8]:
-            coding -= i[1]
-        # bir
-        elif i[0] == 2:
-            bir -= i[1]
-    return {"coding": coding, "bir": bir}
-
-
 def main():
     workometer: int = get_last_sevendays_avg()
     start()
