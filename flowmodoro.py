@@ -31,7 +31,7 @@ def get_today_cicles() -> str:
         ended: list = cicle[2].split()
         ended_time: str = f"{ended[1].split(':')[0]}:{ended[1].split(':')[1]}"
         hours, minutes = divmod(int(cicle[3]), 60)
-        cicle_formated = f"Cycle {i} -> {started[0]} {started_time} | {ended[0]} {ended_time} | Working {hours:02d}:{minutes:02d} | {projects_dict[cicle[0]].capitalize()} | {cicle[4]}\n"
+        cicle_formated = f"Cycle {i:02d} -> {started_time} - {ended_time} | {hours:02d}:{minutes:02d} | {projects_dict[cicle[0]].upper()} | {cicle[4]}\n"
         i += 1
         cycles_str += cicle_formated
     return cycles_str
@@ -91,9 +91,9 @@ def start() -> None:
         f"To start using select a break level:\n"
         f"    - 1 : offers a break ratio of 05-minute break for every 60 minutes of work\n"
         f"    - 2 : offers a break ratio of 10-minute break for every 60 minutes of work.\n"
-        f"    - 3 : offers a break ratio of 15-minute break for every 60 minutes of work.\n"
+        f"    - 3 : offers a break ratio of 15-minute break for every 60 minutes of work.\n\n"
         f"Your selected break level is: {result[0][0]} \nTo start working with this break level press enter\n\n"
-        f"To change it enter the int corresponding with you selected Break Level\n"
+        f"To change it enter the int corresponding with you selected Break Level\n\n"
     )
     inp = input(flowmodoro_description)
     try:
@@ -108,7 +108,7 @@ def start() -> None:
 
 
 def progress_bar(
-    current: int, total: int, length: int = 50, reverse: bool = False
+    current: int, total: int, length: int = 25, reverse: bool = False
 ) -> str:
     try:
         if reverse:
@@ -164,7 +164,7 @@ def work_loop(cycles: str, total_worked: int, workometer: int, working_on: str) 
             break
     while True:
         try:
-            accomplished: str = input("What did you accomplish during this cycle? ")
+            accomplished: str = input("What did you accomplish during this cycle? \n\n")
             break
         except (KeyboardInterrupt, EOFError):
             continue
@@ -220,14 +220,16 @@ def select_wip() -> str:
     os.system("cls" if os.name == "nt" else "clear")
     query: str = "SELECT project, status FROM projects"
     results: list = sql_query(query)
+    print(
+        "If you wish to create a new project add !\n"
+        "If you want to see inactive projects input 0\n\n"
+    )
     print("Daily projects:")
     for tpl in results:
         if tpl[1] == 0:
             print(f"· {tpl[0].upper()}")
     working = input(
-        "On what project are you wokring on this cycle?\n"
-        "If you wish to create a new project add !\n"
-        "If you want to see inactive projects input 0\n"
+        "On what project are you wokring on this cycle?\n\n"
     ).lower()
     wip = check_wip(working, results)
     return wip
