@@ -152,7 +152,7 @@ def work_loop(cycles: str, total_worked: int, workometer: int, working_on: str) 
                     f"Workometer -> {workometer_hours:02d}:{workometer_minutes:02d}\n{progress_bar(total_m, workometer)}\n"
                 )
                 print("Projects progress:")
-                print(f"{goals_bar(projects_goal, total_m, working_on)}")
+                print(f"{goals_bar(projects_goal, cycle_m, working_on)}")
                 print("Press Cntrl + C to end working\n")
                 print("Cycles today:\n")
                 print(cycles)
@@ -319,11 +319,11 @@ def goals_bar(remaining_time: dict, mins_cycle: int, working_in: str) -> str:
     }
     if subs_dict[working_in] != None:
         for project, times_list in remaining_time.items():
-            remaining: int = times_list[1]
+            time_done: int = times_list[1]
             current_t: int = (
-                remaining
+                time_done
                 if subs_dict[working_in] != project
-                else remaining + mins_cycle
+                else time_done + mins_cycle
             )
             bar = progress_bar(current_t, times_list[0])
             formated_bar = (
