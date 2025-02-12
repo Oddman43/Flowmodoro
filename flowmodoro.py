@@ -68,7 +68,9 @@ def get_last_sevendays_avg() -> int:
 
 def total_mins_today() -> int:
     today: str = str(datetime.now()).split()[0]
-    query: str = f"SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) = '{today}'"
+    query: str = (
+        f"SELECT SUM(mins_worked) FROM daily_log WHERE DATE(started) = '{today}'"
+    )
     result: list = sql_query(query)
     return 0 if result[0][0] == None else int(result[0][0])
 
@@ -129,9 +131,8 @@ def progress_bar(
     return bar
 
 
-def work_loop(
-    cycles: str, total_worked: int, workometer: int, working_on: str
-) -> tuple:
+def work_loop(cycles: str, total_worked: int, workometer: int, working_on: str) -> int:
+    projects_goal: dict = project_goals()
     time_started: datetime = datetime.now()
     timer: int = 1
     while True:
@@ -141,17 +142,18 @@ def work_loop(
                 total_secs: int = timer + (total_worked * 60)
                 total_m, _ = divmod(total_secs, 60)
                 total_hours, total_minutes = divmod(total_m, 60)
-                print(f"Worked today -> {total_hours:02d}:{total_minutes:02d}")
                 cycle_m, _ = divmod(timer, 60)
                 cycle_hours, cycle_minutes = divmod(cycle_m, 60)
+                workometer_hours, workometer_minutes = divmod(workometer, 60)
+                print(f"Worked today -> {total_hours:02d}:{total_minutes:02d}")
                 print(f"Current cycle -> {cycle_hours:02d}:{cycle_minutes:02d}")
                 print(f"Working on -> {working_on.upper()}\n")
-                workometer_hours, workometer_minutes = divmod(workometer, 60)
-                bar: str = progress_bar(total_m, workometer)
                 print(
-                    f"Workometer -> {workometer_hours:02d}:{workometer_minutes:02d}\n{bar}\n"
+                    f"Workometer -> {workometer_hours:02d}:{workometer_minutes:02d}\n{progress_bar(total_m, workometer)}\n"
                 )
-                print(f"Press Cntrl + C to end working\n")
+                print("Projects progress:")
+                print(f"{goals_bar(projects_goal, total_m, working_on)}")
+                print("Press Cntrl + C to end working\n")
                 print("Cycles today:\n")
                 print(cycles)
                 time.sleep(1)
@@ -171,18 +173,18 @@ def work_loop(
     projects_id: dict = get_subs_dict(reverse=True)
     t_started = str(time_started).split(".")[0]
     t_ended = str(time_ended).split(".")[0]
-    return (projects_id[working_on], t_started, t_ended, mins_worked, accomplished)
-
-
-def save_cycle(work_tuple: tuple) -> None:
-    con: sqlite3.Connection = sqlite3.connect("flow.db")
-    cur: sqlite3.Cursor = con.cursor()
-    cur.execute(
-        "INSERT INTO daily_log (project_id, started, ended, mins_worked, accomplished)VALUES (?, ?, ?, ?, ?)",
-        work_tuple,
+    query: str = (
+        "INSERT INTO daily_log (project_id, started, ended, mins_worked, accomplished)VALUES (?, ?, ?, ?, ?)"
     )
-    con.commit()
-    con.close()
+    work_loop_info: tuple = (
+        projects_id[working_on],
+        t_started,
+        t_ended,
+        mins_worked,
+        accomplished,
+    )
+    sql_insert_update(query, work_loop_info)
+    return mins_worked
 
 
 def break_time(mins_worked: int, break_level: float) -> None:
@@ -272,23 +274,81 @@ def sql_query(query: str, fetch_all=True) -> list:
     return results
 
 
-def sql_insert_update(query: str) -> None:
+def sql_insert_update(query: str, filler: tuple = ()) -> None:
     con: sqlite3.Connection = sqlite3.connect("flow.db")
     cur: sqlite3.Cursor = con.cursor()
-    cur.execute(query)
+    if len(filler) != 0:
+        cur.execute(query, filler)
+    else:
+        cur.execute(query)
     con.commit()
     con.close
+
+
+def project_goals() -> dict:
+    today: str = str(datetime.now()).split()[0]
+    query: str = (
+        f"SELECT project_id, mins_worked FROM daily_log WHERE DATE(started) = '{today}'"
+    )
+    results: list = sql_query(query)
+    coding: int = 0
+    bir: int = 0
+    for i in results:
+        # coding
+        if i[0] in [1, 3, 5, 7, 8]:
+            coding += i[1]
+        # bir
+        elif i[0] == 2:
+            bir += i[1]
+    return {"coding": [240, coding], "bir": [60, bir]}
+
+
+def goals_bar(remaining_time: dict, mins_cycle: int, working_in: str) -> str:
+    bar_str: str = ""
+    bir_format: str = "BIR -> 01:00\n"
+    coding_format: str = "Coding -> 04:00\n"
+    subs_dict = {
+        "coding": "coding",
+        "estadistica": "coding",
+        "cs50": "coding",
+        "master": "coding",
+        "datacamp": "coding",
+        "bir": "bir",
+        "japanese": None,
+        "ics": None,
+    }
+    if subs_dict[working_in] != None:
+        for project, times_list in remaining_time.items():
+            remaining: int = times_list[1]
+            current_t: int = (
+                remaining
+                if subs_dict[working_in] != project
+                else remaining + mins_cycle
+            )
+            bar = progress_bar(current_t, times_list[0])
+            formated_bar = (
+                bir_format + bar + "\n"
+                if project == "bir"
+                else coding_format + bar + "\n"
+            )
+            bar_str += formated_bar
+    else:
+        bar_bir: str = progress_bar(remaining_time["bir"][1], remaining_time["bir"][0])
+        bar_coding: str = progress_bar(
+            remaining_time["coding"][1], remaining_time["coding"][0]
+        )
+        bar_str += coding_format + bar_coding + "\n" + bir_format + bar_bir + "\n"
+    return bar_str
 
 
 def main():
     workometer: int = get_last_sevendays_avg()
     start()
     while True:
-        work_cycle = work_loop(
+        mins_worked: int = work_loop(
             get_today_cicles(), total_mins_today(), workometer, select_wip()
         )
-        save_cycle(work_cycle)
-        break_time(work_cycle[3], get_break_level())
+        break_time(mins_worked, get_break_level())
 
 
 if __name__ == "__main__":
