@@ -5,14 +5,12 @@ import os
 import pygame
 
 
-def get_break_level() -> float:
-    query: str = "SELECT break_level FROM break_level"
-    break_level: int = int(sql_query(query, False)[0])
-    if break_level == 1:
+def get_break_level(selected: int) -> float:
+    if selected == 1:
         return 5 / 60
-    elif break_level == 2:
+    elif selected == 2:
         return 10 / 60
-    elif break_level == 3:
+    elif selected == 3:
         return 15 / 60
 
 
@@ -31,7 +29,8 @@ def get_today_cicles() -> str:
         ended: list = cicle[2].split()
         ended_time: str = f"{ended[1].split(':')[0]}:{ended[1].split(':')[1]}"
         hours, minutes = divmod(int(cicle[3]), 60)
-        cicle_formated = f"Cycle {i:02d} -> {started_time} - {ended_time} | {hours:02d}:{minutes:02d} | {projects_dict[cicle[0]].upper()} | {cicle[4]}\n"
+        cicle_formated = f"Cycle {i:02d} -> {started_time} - {ended_time} | {hours:02d}:{minutes:02d} | {projects_dict[cicle[0]].upper()}\n"
+        # cicle_formated_accomp = f"Cycle {i:02d} -> {started_time} - {ended_time} | {hours:02d}:{minutes:02d} | {projects_dict[cicle[0]].upper()} | {cicle[4]}\n"
         i += 1
         cycles_str += cicle_formated
     return cycles_str
@@ -97,12 +96,16 @@ def start() -> None:
     )
     inp = input(flowmodoro_description)
     try:
-        if int(inp) in [1, 2, 3]:
+        if inp == "":
+            selected = int(result[0][0])
+        elif int(inp) in [1, 2, 3]:
             sql_insert_update(
                 f"UPDATE break_level SET break_level = {int(inp)} WHERE id = 1"
             )
+            selected = int(inp)
         else:
             start()
+        return get_break_level(selected)
     except ValueError:
         pass
 
@@ -345,12 +348,12 @@ def goals_bar(remaining_time: dict, mins_cycle: int, working_in: str) -> str:
 
 def main():
     workometer: int = get_last_sevendays_avg()
-    start()
+    break_level: float = start()
     while True:
         mins_worked: int = work_loop(
             get_today_cicles(), total_mins_today(), workometer, select_wip()
         )
-        break_time(mins_worked, get_break_level())
+        break_time(mins_worked, break_level)
 
 
 if __name__ == "__main__":
