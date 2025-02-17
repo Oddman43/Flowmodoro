@@ -20,6 +20,6 @@ CREATE TABLE projects (
 
 CREATE TABLE break_level (
     "bl" INTEGER NOT NULL DEFAULT 2
-)
+);
 
-CREATE INDEX "started" ON "daily_log" ("started_date")
+CREATE INDEX "started" ON "daily_log" ("started_date");
