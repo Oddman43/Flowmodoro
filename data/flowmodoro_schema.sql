@@ -1,10 +1,8 @@
 CREATE TABLE daily_log (
     "id" INTEGER,
     "project_id" INTEGER,
-    "started_date" TEXT,
-    "started_time" TEXT,
-    "ended_date" TEXT,
-    "ended_time" TEXT,
+    "started" TEXT,
+    "ended" TEXT,
     "mins_worked" INTEGER,
     "accomplished" TEXT,
     PRIMARY KEY ("id"),
