@@ -208,7 +208,7 @@ def break_time(mins_worked: int, break_level: float) -> None:
     except (KeyboardInterrupt, EOFError):
         pass
     try:
-        file_path: str = r"C:\Users\alber\Documents\Flowmodoro funct\alarm.wav"
+        file_path = os.path.join("..", "data", "alarm.wav")
         print("Break time is over")
         pygame.mixer.init()
         pygame.mixer.music.load(file_path)
