@@ -346,7 +346,19 @@ def goals_bar(remaining_time: dict, mins_cycle: int, working_in: str) -> str:
     return bar_str
 
 
+def startup_check() -> None:
+    if not os.path.exists("flow3.db"):
+        con = sqlite3.connect("flow3.db")
+        cur = con.cursor()
+        with open("flowmodoro_schema.sql", "r") as sql_file:
+            schema: str = sql_file.read()
+        cur.executescript(schema)
+        con.commit()
+        con.close()
+
+
 def main():
+    startup_check()
     workometer: int = get_last_sevendays_avg()
     break_level: float = start()
     while True:
