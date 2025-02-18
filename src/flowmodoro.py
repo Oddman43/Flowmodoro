@@ -30,7 +30,6 @@ def get_today_cicles() -> str:
         ended_time: str = f"{ended[1].split(':')[0]}:{ended[1].split(':')[1]}"
         hours, minutes = divmod(int(cicle[3]), 60)
         cicle_formated = f"Cycle {i:02d} -> {started_time} - {ended_time} | {hours:02d}:{minutes:02d} | {projects_dict[cicle[0]].upper()}\n"
-        # cicle_formated_accomp = f"Cycle {i:02d} -> {started_time} - {ended_time} | {hours:02d}:{minutes:02d} | {projects_dict[cicle[0]].upper()} | {cicle[4]}\n"
         i += 1
         cycles_str += cicle_formated
     return cycles_str
@@ -154,14 +153,12 @@ def work_loop(cycles: str, total_worked: int, workometer: int, working_on: str) 
                 print(
                     f"Workometer -> {workometer_hours:02d}:{workometer_minutes:02d}\n{progress_bar(total_m, workometer)}\n"
                 )
-                print("Projects progress:")
-                print(f"{goals_bar(projects_goal, cycle_m, working_on)}")
                 print("Press Cntrl + C to end working\n")
                 print("Cycles today:\n")
                 print(cycles)
                 time.sleep(1)
                 timer += 1
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, EOFError):
             os.system("cls" if os.name == "nt" else "clear")
             time_ended: datetime = datetime.now()
             break
@@ -306,44 +303,6 @@ def project_goals() -> dict:
         elif i[0] == 7:
             master += i[1]
     return {"coding": [180, coding], "master": [180, master]}
-
-
-def goals_bar(remaining_time: dict, mins_cycle: int, working_in: str) -> str:
-    bar_str: str = ""
-    master_format: str = "Master -> 03:00\n"
-    coding_format: str = "Coding -> 03:00\n"
-    subs_dict = {
-        "coding": "coding",
-        "estadistica": "coding",
-        "cs50": "coding",
-        "master": "master",
-        "datacamp": "coding",
-        "bir": None,
-        "japanese": None,
-        "ics": None,
-    }
-    if subs_dict[working_in] != None:
-        for project, times_list in remaining_time.items():
-            time_done: int = times_list[1]
-            current_t: int = (
-                time_done
-                if subs_dict[working_in] != project
-                else time_done + mins_cycle
-            )
-            bar = progress_bar(current_t, times_list[0])
-            formated_bar = (
-                master_format + bar + "\n"
-                if project == "master"
-                else coding_format + bar + "\n"
-            )
-            bar_str += formated_bar
-    else:
-        bar_master: str = progress_bar(remaining_time["master"][1], remaining_time["master"][0])
-        bar_coding: str = progress_bar(
-            remaining_time["coding"][1], remaining_time["coding"][0]
-        )
-        bar_str += coding_format + bar_coding + "\n" + master_format + bar_master + "\n"
-    return bar_str
 
 
 def startup_check() -> None:
