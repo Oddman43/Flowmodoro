@@ -17,7 +17,10 @@ CREATE TABLE projects (
 );
 
 CREATE TABLE break_level (
-    "bl" INTEGER NOT NULL DEFAULT 2
+    "id" INTEGER,
+    "break_level" INTEGER,
+    PRIMARY KEY ("id")
 );
 
 CREATE INDEX "started" ON "daily_log" ("started_date");
+INSERT INTO break_level (break_level) VALUES (2);
