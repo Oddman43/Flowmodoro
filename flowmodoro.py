@@ -85,7 +85,7 @@ def start() -> None:
         f"Tailored productivity for individual rhythms, whether tackling projects or studying.\n\n"
         # Que es workometer
         f"Workometer is a feature that calculates the average time worked per day over the user's last workweek"
-        f"and displays a progress bar to incentivize reaching at least 100% productivity\n\n"
+        f"and displays a progress bar to incentivize reaching at least 100%productivity\n\n"
         # Como usar
         f"To start using select a break level:\n"
         f"    - 1 : offers a break ratio of 05-minute break for every 60 minutes of work\n"
