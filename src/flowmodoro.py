@@ -297,28 +297,28 @@ def project_goals() -> dict:
     )
     results: list = sql_query(query)
     coding: int = 0
-    bir: int = 0
+    master: int = 0
     for i in results:
         # coding
-        if i[0] in [1, 3, 5, 7, 8]:
+        if i[0] in [1, 3, 5, 8]:
             coding += i[1]
-        # bir
-        elif i[0] == 2:
-            bir += i[1]
-    return {"coding": [240, coding], "bir": [60, bir]}
+        # master
+        elif i[0] == 7:
+            master += i[1]
+    return {"coding": [180, coding], "master": [180, master]}
 
 
 def goals_bar(remaining_time: dict, mins_cycle: int, working_in: str) -> str:
     bar_str: str = ""
-    bir_format: str = "BIR -> 01:00\n"
-    coding_format: str = "Coding -> 04:00\n"
+    master_format: str = "Master -> 03:00\n"
+    coding_format: str = "Coding -> 03:00\n"
     subs_dict = {
         "coding": "coding",
         "estadistica": "coding",
         "cs50": "coding",
-        "master": "coding",
+        "master": "master",
         "datacamp": "coding",
-        "bir": "bir",
+        "bir": None,
         "japanese": None,
         "ics": None,
     }
@@ -332,25 +332,26 @@ def goals_bar(remaining_time: dict, mins_cycle: int, working_in: str) -> str:
             )
             bar = progress_bar(current_t, times_list[0])
             formated_bar = (
-                bir_format + bar + "\n"
-                if project == "bir"
+                master_format + bar + "\n"
+                if project == "master"
                 else coding_format + bar + "\n"
             )
             bar_str += formated_bar
     else:
-        bar_bir: str = progress_bar(remaining_time["bir"][1], remaining_time["bir"][0])
+        bar_master: str = progress_bar(remaining_time["master"][1], remaining_time["master"][0])
         bar_coding: str = progress_bar(
             remaining_time["coding"][1], remaining_time["coding"][0]
         )
-        bar_str += coding_format + bar_coding + "\n" + bir_format + bar_bir + "\n"
+        bar_str += coding_format + bar_coding + "\n" + master_format + bar_master + "\n"
     return bar_str
 
 
 def startup_check() -> None:
-    if not os.path.exists("flow3.db"):
-        con = sqlite3.connect("flow3.db")
+    if not os.path.exists("flow.db"):
+        con = sqlite3.connect("flow.db")
         cur = con.cursor()
-        with open("flowmodoro_schema.sql", "r") as sql_file:
+        path = os.path.join("..", "data", "flowmodoro_schema.sql")
+        with open(path, "r") as sql_file:
             schema: str = sql_file.read()
         cur.executescript(schema)
         con.commit()
