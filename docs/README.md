@@ -37,12 +37,11 @@ The db schema can be found in `flowmodoro_schema.sql`
 | ------------- | ---- | ----------------------------------------------------------------------------- |
 | id            | int  | Primary key, used to identify log                                             |
 | project_id    | int  | Foreign key, used to relate to poject                                         |
-| started_date  | str  | Date in YYYY-MM-DD corresponding to started date.<br>This column has an Index |
-| started_time  | str  | Time in format HH:MM:ss corresponding to starteted time                       |
-| ended_date    | str  | Date in YYYY-MM-DD corresponding to ended date                                |
-| ended_time    | str  | Time in format HH:MM:ss corresponding to ended time                           |
+| started  | str  | Date in YYYY-MM-DD HH:MM:ss corresponding to started date.<br>This column has an Index |
+| ended    | str  | Date in YYYY-MM-DD HH:MM:ss corresponding to ended date                                |
 | mins_worked   | int  | Number of minutes worked in cycle                                             |
 | accomplisdhed | str  | Description of especific things worked on                                     |
+
 ### Table `project`
 
 | Column  | Type | Description                                                           |
@@ -65,10 +64,8 @@ erDiagram
   DAILY_LOG {
     int id PK
     int project_id FK
-    string started_date
-    string started_time
-    string ended_date
-    string ended_time
+    string started
+    string ended
     int mins_worked
     string accomplished
   }
@@ -82,6 +79,6 @@ erDiagram
   }
   DAILY_LOG ||--o{ PROJECT : "belongs to"
 ```
-## Contributing
 ## License
+GLP 3.0
 ## Author
