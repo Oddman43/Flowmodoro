@@ -248,9 +248,10 @@ def check_wip(working: str, results):
         # si empieza con ! crear proyecto
         if working[0] == "!":
             sql_insert_update(
-                f"INSERT INTO projects (project) VALUES ({working.replace("!", "")})"
+                f"INSERT INTO projects (project) VALUES (?)",
+                (working.replace("!", ""),)
             )
-            return working
+            return working.replace("!", "")
         # si es 0 dar lista de inactive
         elif working == "0":
             print("Inactive projects")
