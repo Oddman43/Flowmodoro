@@ -245,24 +245,29 @@ def check_wip(working: str, results):
             )
         return working
     else:
+        try:
         # si empieza con ! crear proyecto
-        if working[0] == "!":
-            sql_insert_update(
-                f"INSERT INTO projects (project) VALUES (?)",
-                (working.replace("!", ""),)
-            )
-            return working.replace("!", "")
-        # si es 0 dar lista de inactive
-        elif working == "0":
-            print("Inactive projects")
-            for k, v in check.items():
-                if v == 1:
-                    print(f"· {k.upper()}")
-            input("Press enter to continue\n")
-        # no existe o esta mal escrito
-        else:
+            if working[0] == "!":
+                sql_insert_update(
+                    f"INSERT INTO projects (project) VALUES (?)",
+                    (working.replace("!", ""),)
+                )
+                return working.replace("!", "")
+            # si es 0 dar lista de inactive
+            elif working == "0":
+                print("Inactive projects")
+                for k, v in check.items():
+                    if v == 1:
+                        print(f"· {k.upper()}")
+                input("Press enter to continue\n")
+            # no existe o esta mal escrito
+            else:
+                input("The project dosent exist, please press enter to select again\n")
+            return select_wip()
+        except IndexError:
             input("The project dosent exist, please press enter to select again\n")
-        return select_wip()
+            return select_wip()
+
 
 
 def sql_query(query: str, fetch_all=True) -> list:
