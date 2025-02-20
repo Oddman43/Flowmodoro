@@ -261,7 +261,7 @@ def check_wip(working: str, results):
             input("Press enter to continue\n")
         # no existe o esta mal escrito
         else:
-            input("The project dosent exist, please press enter to selecta again\n")
+            input("The project dosent exist, please press enter to select again\n")
         return select_wip()
 
 
