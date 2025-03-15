@@ -1,7 +1,7 @@
 # Flowmodoro a Focus time tracker
 A flexible time management tool inspired by Pomodoro technique.
 ## Description
-Based in the popular time managment framework Pomodoro, improving it by beeing able to Start work sessions at your convenience, pause when concentration wanes, and let the system calculate optimal break times based on what Break Level you selected. Tailored productivity for individual rhythms, whether tackling projects or studying.
+Based in the popular time managment framework Pomodoro, improving it by beeing able to Start work sessions at your convenience, pause it when concentration wanes, and let the system calculate optimal break times based on what Break Level you selected. Tailored productivity for individual rhythms, whether tackling projects or studying.
 ## Table of Contents
 *   [Features](#features)
 *   [Requirements](#requirements)
