@@ -37,7 +37,7 @@ Next, usage instructions will be displayed, along with the option to select a `b
 
 Once the user has selected a `break_level`, they will need to select a project to work on. They can choose from the already active projects displayed or create a new one by prefixing the name with `!`. The project name will be checked for existence to avoid typos.
 
-Projects are stored in `flow.db` and can be soft-deleted by changing the `status` column to 1.
+Projects are stored in `flow.db` and can be soft-deleted by changing the `status` column.
 
 With the `break_level` and a project selected, the timer will start, displaying:
 
